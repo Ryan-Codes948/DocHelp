@@ -1,5 +1,6 @@
 CREATE DATABASE docmate;
 USE docmate;
+USE docmate;
 
 -- Users table
 CREATE TABLE users (
