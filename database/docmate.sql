@@ -98,3 +98,16 @@ INSERT INTO doctors (user_id, name, degree, phone, bmdc, nid, address, chamber, 
 ((SELECT id FROM users WHERE email='dr.mahmuda@gmail.com'), 'Dr Mahmuda Begum', 'MBBS', '01888889999', 'BMDC1008', '9876543217', 'Rangpur', 'Jahaj Company', 'Sun,Wed', 'Medicine'),
 ((SELECT id FROM users WHERE email='dr.jawed@gmail.com'), 'Dr Jawed Iqbal', 'MBBS', '01911112222', 'BMDC1009', '9876543218', 'Cumilla', 'Kandirpar', 'Mon,Thu', 'Orthopedic'),
 ((SELECT id FROM users WHERE email='dr.mim@gmail.com'), 'Dr Mim Akter', 'MBBS', '01922223333', 'BMDC1010', '9876543219', 'Mymensingh', 'Town Hall', 'Fri,Sat', 'General physician');
+
+ALTER TABLE doctors
+ADD available_time VARCHAR(50) AFTER available_days;
+
+UPDATE doctors SET available_time='10:00 AM - 2:00 PM' WHERE id=1;
+UPDATE doctors SET available_time='3:00 PM - 7:00 PM' WHERE id=3;
+UPDATE doctors SET available_time='9:00 AM - 1:00 PM' WHERE id=4;
+UPDATE doctors SET available_time='5:00 PM - 9:00 PM' WHERE id=5;
+UPDATE doctors SET available_time='10:00 AM - 1:00 PM' WHERE id=6;
+UPDATE doctors SET available_time='4:00 PM - 8:00 PM' WHERE id=7;
+UPDATE doctors SET available_time='9:00 AM - 12:00 PM' WHERE id=8;
+UPDATE doctors SET available_time='6:00 PM - 10:00 PM' WHERE id=9;
+UPDATE doctors SET available_time='3:00 PM - 7:00 PM' WHERE id=10;
