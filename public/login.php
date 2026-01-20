@@ -20,7 +20,7 @@ if ($_POST) {
 <body>
 
 <div class="login-container">
-    <h2>Login</h2>
+    <h2>DocHelp👨‍⚕️</h2>
 
     <?php if (!empty($error)) echo "<div class='error'>$error</div>"; ?>
 
@@ -37,7 +37,6 @@ if ($_POST) {
     <div class="signup-link">
         <p>New here?</p>
         <a href="signup_patient.php">Signup as Patient</a><br>
-        <a href="signup_doctor.php">Signup as Doctor</a>
     </div>
 </div>
 
