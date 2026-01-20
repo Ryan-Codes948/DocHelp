@@ -1,4 +1,5 @@
 /* Simple Modern Patient Dashboard CSS */
+
  
 * {
     margin: 0;
@@ -6,6 +7,7 @@
     box-sizing: border-box;
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
+
  
 body {
     background: #f4f6f8;
@@ -22,6 +24,18 @@ nav {
     color: #111827;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
+
+.nav-left {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
  
 .nav-left {
     font-weight: 600;
@@ -41,6 +55,11 @@ nav {
     font-weight: 500;
     font-size: 14px;
 }
+
+.nav-right a:hover {
+    color: #2563eb;
+}
+
  
 .nav-right a:hover {
     color: #2563eb;
@@ -52,6 +71,7 @@ nav {
     cursor: pointer;
     font-weight: 500;
 }
+
  
 .dropdown-content {
     display: none;
@@ -63,6 +83,7 @@ nav {
     box-shadow: 0 10px 26px rgba(0,0,0,0.12);
     z-index: 1;
 }
+
  
 .dropdown-content a {
     color: #374151;
@@ -71,6 +92,15 @@ nav {
     text-decoration: none;
     font-size: 13px;
 }
+
+.dropdown-content a:hover {
+    background: #f1f5f9;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
  
 .dropdown-content a:hover {
     background: #f1f5f9;
@@ -91,6 +121,7 @@ nav {
 .search-bar {
     margin-bottom: 22px;
 }
+
  
 .search-bar input {
     width: 100%;
@@ -100,6 +131,7 @@ nav {
     border: 1px solid #d1d5db;
     background: #ffffff;
 }
+
  
 .search-bar input:focus {
     outline: none;
@@ -121,6 +153,7 @@ nav {
     width: 48%;
     box-shadow: 0 10px 24px rgba(0,0,0,0.08);
 }
+
  
 .card h3 {
     margin-top: 0;
@@ -128,11 +161,13 @@ nav {
     padding-bottom: 6px;
     font-size: 16px;
 }
+
  
 .card p {
     font-size: 13px;
     color: #4b5563;
 }
+
  
 /* Status / Cancel Info Boxes */
 .cancelled-info {
@@ -142,16 +177,19 @@ nav {
     font-weight: 500;
     font-size: 13px;
 }
+
  
 .cancelled-info.doctor-cancelled {
     background: #fef3c7;
     color: #92400e;
 }
+
  
 .cancelled-info.patient-cancelled {
     background: #dcfce7;
     color: #166534;
 }
+
  
 /* Action Buttons */
 .remove-btn, .unbook-btn {
@@ -164,26 +202,31 @@ nav {
     font-size: 13px;
     transition: background 0.2s ease, transform 0.1s ease;
 }
+
  
 .remove-btn {
     background: #dc2626;
     color: #ffffff;
 }
+
  
 .remove-btn:hover {
     background: #b91c1c;
     transform: translateY(-1px);
 }
+
  
 .unbook-btn {
     background: #f59e0b;
     color: #ffffff;
 }
+
  
 .unbook-btn:hover {
     background: #d97706;
     transform: translateY(-1px);
 }
+
  
 /* Footer */
 .footer {
@@ -194,11 +237,20 @@ nav {
     margin-top: 30px;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
 }
+
  
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .card {
+        width: 100%;
+    }
+}
 }
  
 /* Responsive */

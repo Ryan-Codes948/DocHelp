@@ -70,11 +70,18 @@ require "../app/config/database.php";
 require "../app/core/auth.php";
 require "../app/models/Doctor.php";
 require "../app/models/Booking.php";
+
  
 // Get patient info
 $q = $conn->prepare("SELECT id, name, phone FROM patients WHERE user_id=?");
 $q->execute([$_SESSION['user_id']]);
 $patient = $q->fetch(PDO::FETCH_ASSOC);
+
+$doctorModel  = new Doctor($conn);
+$bookingModel = new Booking($conn);
+
+$doctors = $doctorModel->all();
+
  
 $doctorModel  = new Doctor($conn);
 $bookingModel = new Booking($conn);
@@ -85,6 +92,9 @@ $activeBookedDoctors = array_column(
     $bookingModel->myActiveBookings($patient['id']),
     'id'  // this is the doctor ID, because SELECT d.* returns d.id
 );
+
+
+
  
  
  
@@ -96,6 +106,7 @@ $activeBookedDoctors = array_column(
     <link rel="stylesheet" href="../public/assets/css/patient_dashboard.css">
 </head>
 <body>
+
  
 <nav>
     <div class="nav-left">Patient View</div>
@@ -103,6 +114,8 @@ $activeBookedDoctors = array_column(
         <a href="./patient.php">My Bookings</a>
         <a href="./my_bookings.php">Doctors</a>
         <a href="./medicines.php">Medicines</a>
+
+
  
  
         <div class="dropdown">
@@ -113,6 +126,14 @@ $activeBookedDoctors = array_column(
         </div>
     </div>
 </nav>
+
+<div class="container">
+    <h2>Available Doctors</h2>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search doctors by expertise or description...">
+    </div>
+
  
 <div class="container">
     <h2>Available Doctors</h2>
@@ -132,12 +153,18 @@ $activeBookedDoctors = array_column(
             <p><strong>Available Days:</strong> <?= htmlspecialchars($d['available_days']) ?></p>
             <p><strong>Available Time:</strong> <?= htmlspecialchars($d['available_time']) ?></p>
             <p><strong>Description:</strong> <?= htmlspecialchars($d['description'] ?? '') ?></p>
+
  
             <!-- Updated buttons using only active bookings -->
     <!-- Updated buttons -->
      <?php
 $days = array_map('trim', explode(',', $d['available_days']));
 ?>
+
+<div class="days">
+    <?php foreach($days as $day): ?>
+        <label>
+            <input 
  
 <div class="days">
     <?php foreach($days as $day): ?>
@@ -151,18 +178,24 @@ $days = array_map('trim', explode(',', $d['available_days']));
         </label>
     <?php endforeach; ?>
 </div>
+
  
 <button
     class="book"
     onclick="bookDoctor(<?= (int)$d['id'] ?>)"
     <?= !($d['is_available'] ?? 0) || in_array($d['id'], $activeBookedDoctors) ? 'disabled' : '' ?>
 >Book</button>
+
  
 <button
     class="unbook"
     onclick="unbookDoctorByDocId(<?= (int)$d['id'] ?>)"
     <?= in_array($d['id'], $activeBookedDoctors) ? '' : 'disabled' ?>
 >Unbook</button>
+
+
+
+
  
  
  
@@ -179,17 +212,20 @@ $days = array_map('trim', explode(',', $d['available_days']));
         </p>
     </div>
 </footer>
+
  
 <script>
 function bookDoctor(doctorId){
     const selectedDay = document.querySelector(
         `input[name="day_${doctorId}"]:checked`
     );
+
  
     if(!selectedDay){
         alert("Please select a preferred day");
         return;
     }
+
  
     fetch("../public/book.php", {
         method: "POST",
@@ -208,6 +244,7 @@ function bookDoctor(doctorId){
         }
     });
 }
+
  
 // New function for doctor ID based unbooking
 function unbookDoctorByDocId(doctorId){
@@ -223,6 +260,7 @@ function unbookDoctorByDocId(doctorId){
         }
     });
 }
+
  
 // For booking ID based unbooking (used in my_bookings.php)
 function unbookDoctor(bookingId){
@@ -238,6 +276,8 @@ function unbookDoctor(bookingId){
         }
     });
 }
+
+
  
  
 // Search filter
@@ -249,6 +289,9 @@ document.getElementById('searchInput').addEventListener('input', function(){
     });
 });
 </script>
+
+</body>
+</html>
  
 </body>
 </html>

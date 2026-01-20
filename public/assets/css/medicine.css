@@ -1,14 +1,18 @@
+/* Simple Modern Dashboard CSS - Patient Bookings */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
+
  
 body {
     background: #f4f6f8;
     color: #1f2937;
 }
+
  
 /* Navbar */
 nav {
@@ -20,11 +24,13 @@ nav {
     color: #111827;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
+
  
 .nav-left {
     font-weight: 600;
     color: #2563eb;
 }
+
  
 .nav-right a {
     color: #374151;
@@ -33,6 +39,11 @@ nav {
     font-weight: 500;
     font-size: 14px;
 }
+
+.nav-right a:hover {
+    color: #2563eb;
+}
+
  
 .nav-right a:hover {
     color: #2563eb;
@@ -44,6 +55,7 @@ nav {
     cursor: pointer;
     font-weight: 500;
 }
+
  
 .dropdown-content {
     display: none;
@@ -55,6 +67,7 @@ nav {
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     z-index: 1;
 }
+
  
 .dropdown-content a {
     color: #374151;
@@ -63,6 +76,15 @@ nav {
     text-decoration: none;
     font-size: 13px;
 }
+
+.dropdown-content a:hover {
+    background: #f1f5f9;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
  
 .dropdown-content a:hover {
     background: #f1f5f9;
@@ -77,6 +99,7 @@ nav {
     max-width: 1000px;
     margin: 26px auto;
 }
+
  
 /* Cards Section */
 .cards {
@@ -85,6 +108,7 @@ nav {
     gap: 18px;
     justify-content: center;
 }
+
  
 .card {
     padding: 16px;
@@ -93,6 +117,7 @@ nav {
     border-radius: 14px;
     box-shadow: 0 10px 24px rgba(0,0,0,0.08);
 }
+
  
 .card h3 {
     margin-top: 0;
@@ -100,11 +125,13 @@ nav {
     padding-bottom: 6px;
     font-size: 16px;
 }
+
  
 .card p {
     font-size: 13px;
     color: #4b5563;
 }
+
  
 /* Status Badges */
 .cancelled-info {
@@ -113,21 +140,25 @@ nav {
     border-radius: 10px;
     font-size: 13px;
 }
+
  
 .cancelled-info.doctor-cancelled {
     background: #fef3c7;
     color: #92400e;
 }
+
  
 .cancelled-info.patient-cancelled {
     background: #dcfce7;
     color: #166534;
 }
+
  
 .cancelled-info {
     background: #fee2e2;
     color: #991b1b;
 }
+
  
 /* Buttons */
 .remove-btn, .unbook-btn {
@@ -140,15 +171,22 @@ nav {
     font-size: 13px;
     transition: background 0.2s ease, transform 0.1s ease;
 }
+
  
 .remove-btn {
     background: #dc2626;
     color: #ffffff;
 }
+
  
 .remove-btn:hover {
     background: #b91c1c;
     transform: translateY(-1px);
+}
+
+.unbook-btn {
+    background: #f59e0b;
+    color: #ffffff;
 }
  
 .unbook-btn {
