@@ -7,11 +7,13 @@
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
+ 
 body {
     background: #f4f6f8;
     color: #1f2937;
 }
 
+ 
 /* Navbar */
 nav {
     display: flex;
@@ -23,11 +25,13 @@ nav {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+ 
 .nav-left {
     font-weight: 600;
     color: #2563eb;
 }
 
+ 
 .nav-right a {
     color: #374151;
     text-decoration: none;
@@ -40,6 +44,11 @@ nav {
     color: #2563eb;
 }
 
+ 
+.nav-right a:hover {
+    color: #2563eb;
+}
+ 
 /* Dropdown */
 .dropdown {
     position: relative;
@@ -47,6 +56,7 @@ nav {
     font-weight: 500;
 }
 
+ 
 .dropdown-content {
     display: none;
     position: absolute;
@@ -58,6 +68,7 @@ nav {
     z-index: 1;
 }
 
+ 
 .dropdown-content a {
     color: #374151;
     padding: 10px 14px;
@@ -74,12 +85,22 @@ nav {
     display: block;
 }
 
+ 
+.dropdown-content a:hover {
+    background: #f1f5f9;
+}
+ 
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+ 
 /* Main Container */
 .container {
     max-width: 1000px;
     margin: 26px auto;
 }
 
+ 
 /* Cards Section */
 .cards {
     display: flex;
@@ -88,6 +109,7 @@ nav {
     justify-content: center;
 }
 
+ 
 .card {
     padding: 16px;
     width: 48%;
@@ -96,6 +118,7 @@ nav {
     box-shadow: 0 10px 24px rgba(0,0,0,0.08);
 }
 
+ 
 .card h3 {
     margin-top: 0;
     font-weight: 600;
@@ -103,11 +126,13 @@ nav {
     font-size: 16px;
 }
 
+ 
 .card p {
     font-size: 13px;
     color: #4b5563;
 }
 
+ 
 /* Status Badges */
 .cancelled-info {
     padding: 10px 12px;
@@ -116,21 +141,25 @@ nav {
     font-size: 13px;
 }
 
+ 
 .cancelled-info.doctor-cancelled {
     background: #fef3c7;
     color: #92400e;
 }
 
+ 
 .cancelled-info.patient-cancelled {
     background: #dcfce7;
     color: #166534;
 }
 
+ 
 .cancelled-info {
     background: #fee2e2;
     color: #991b1b;
 }
 
+ 
 /* Buttons */
 .remove-btn, .unbook-btn {
     padding: 8px 14px;
@@ -143,16 +172,23 @@ nav {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
+ 
 .remove-btn {
     background: #dc2626;
     color: #ffffff;
 }
 
+ 
 .remove-btn:hover {
     background: #b91c1c;
     transform: translateY(-1px);
 }
 
+.unbook-btn {
+    background: #f59e0b;
+    color: #ffffff;
+}
+ 
 .unbook-btn {
     background: #f59e0b;
     color: #ffffff;

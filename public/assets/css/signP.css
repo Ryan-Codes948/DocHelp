@@ -7,6 +7,7 @@
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
+ 
 body {
     background: #f4f6f8;
     max-width: 600px;
@@ -15,6 +16,7 @@ body {
     color: #1f2937;
 }
 
+ 
 /* Signup Container */
 .signup-container {
     background: #ffffff;
@@ -23,6 +25,7 @@ body {
     box-shadow: 0 14px 32px rgba(0,0,0,0.12);
 }
 
+ 
 /* Heading */
 h2 {
     color: #111827;
@@ -31,6 +34,7 @@ h2 {
     font-weight: 600;
 }
 
+ 
 /* Messages */
 .error-message {
     color: #991b1b;
@@ -42,6 +46,7 @@ h2 {
     font-size: 14px;
 }
 
+ 
 .success-message {
     color: #166534;
     background: #dcfce7;
@@ -52,6 +57,7 @@ h2 {
     font-size: 14px;
 }
 
+ 
 .field-error {
     color: #dc2626;
     font-size: 12px;
@@ -59,11 +65,13 @@ h2 {
     display: block;
 }
 
+ 
 /* Form Groups */
 .form-group {
     margin-bottom: 16px;
 }
 
+ 
 label {
     display: block;
     margin-bottom: 6px;
@@ -71,6 +79,7 @@ label {
     color: #374151;
 }
 
+ 
 /* Inputs */
 input[type="text"],
 input[type="email"],
@@ -88,11 +97,17 @@ input.error-field, textarea.error-field {
     border-color: #dc2626;
 }
 
+ 
+input.error-field, textarea.error-field {
+    border-color: #dc2626;
+}
+ 
 input:focus, textarea:focus {
     outline: none;
     border-color: #2563eb;
 }
 
+ 
 /* Checkbox Sections */
 .checkbox-section {
     margin: 18px 0;
@@ -102,6 +117,7 @@ input:focus, textarea:focus {
     border: 1px solid #e5e7eb;
 }
 
+ 
 .checkbox-group {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -109,6 +125,7 @@ input:focus, textarea:focus {
     margin-top: 12px;
 }
 
+ 
 .checkbox-group label {
     display: flex;
     align-items: center;
@@ -118,11 +135,13 @@ input:focus, textarea:focus {
     color: #374151;
 }
 
+ 
 .checkbox-group input[type="checkbox"] {
     width: auto;
     margin-right: 8px;
 }
 
+ 
 /* Condition Categories */
 .condition-category {
     margin-bottom: 16px;
@@ -130,6 +149,7 @@ input:focus, textarea:focus {
     border-bottom: 1px solid #e5e7eb;
 }
 
+ 
 .condition-category h4 {
     margin: 0 0 8px 0;
     color: #111827;
@@ -137,6 +157,7 @@ input:focus, textarea:focus {
     font-weight: 600;
 }
 
+ 
 /* Buttons */
 button {
     width: 100%;
@@ -152,17 +173,20 @@ button {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
+ 
 button:hover {
     background: #15803d;
     transform: translateY(-1px);
 }
 
+ 
 /* Back Link */
 .back-link {
     text-align: center;
     margin-top: 18px;
 }
 
+ 
 .back-link a {
     color: #2563eb;
     text-decoration: none;
@@ -173,12 +197,18 @@ button:hover {
     text-decoration: underline;
 }
 
+ 
+.back-link a:hover {
+    text-decoration: underline;
+}
+ 
 /* Required Field Indicator */
 .required::after {
     content: " *";
     color: #dc2626;
 }
 
+ 
 /* Form Rows */
 .form-row {
     display: flex;
@@ -189,11 +219,21 @@ button:hover {
     flex: 1;
 }
 
+ 
+.form-row .form-group {
+    flex: 1;
+}
+ 
 /* Other Conditions Textarea */
 .other-conditions {
     margin-top: 16px;
 }
 
+.other-conditions textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+ 
 .other-conditions textarea {
     min-height: 70px;
     resize: vertical;

@@ -1,9 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Medicine List</title>
+ 
+<link rel="stylesheet" href="../public/assets/css/medicine.css">
+</head>
+<body>
+<nav>
+    <div class="nav-left">Patient View</div>
+    <div class="nav-right">
+        <a href="./patient.php">My Bookings</a>
+        <a href="./my_bookings.php">Doctors</a>
+        <a href="./medicines.php">Medicines</a>
+ 
+       
+                <a href="../public/logout.php">Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>
+ 
+<div class="container">
+  <h2>Search Medicines</h2>
+  <input type="text" id="searchInput" placeholder="Search medicine...">
+ 
+  <div class="cards" id="medicineCards"></div>
+</div>
+ 
+ 
+<script>
+fetch('../public/assets/data/medicines.json')
+  .then(res => res.json())
+  .then(data => {
+    window.meds = data;
+    displayMeds(data);
+  });
+ 
+function displayMeds(list){
+  let container = document.getElementById('medicineCards');
+  container.innerHTML = "";
+  list.forEach(m => {
+    container.innerHTML += `
+      <div class="card">
+        <h3>${m.name}</h3>
+        <p><strong>Type:</strong> ${m.type}</p>
+        <p><strong>Uses:</strong> ${m.for}</p>
+        <p><strong>Brand:</strong> ${m.brand}</p>
+      </div>`;
+  });
+}
+ 
+document.getElementById('searchInput').addEventListener('input', function(){
+  let val = this.value.toLowerCase();
+  let filtered = window.meds.filter(m =>
+    m.name.toLowerCase().includes(val) ||
+    m.for.toLowerCase().includes(val) ||
+    m.brand.toLowerCase().includes(val)
+  );
+  displayMeds(filtered);
+});
+</script>
+ 
+</body>
+</html>
+medicine.php
+ 
 <?php
 require "../app/config/database.php";
 require "../app/core/auth.php";
 require "../app/models/Doctor.php";
 require "../app/models/Booking.php";
 
+ 
 // Get patient info
 $q = $conn->prepare("SELECT id, name, phone FROM patients WHERE user_id=?");
 $q->execute([$_SESSION['user_id']]);
@@ -14,6 +82,12 @@ $bookingModel = new Booking($conn);
 
 $doctors = $doctorModel->all();
 
+ 
+$doctorModel  = new Doctor($conn);
+$bookingModel = new Booking($conn);
+ 
+$doctors = $doctorModel->all();
+ 
 $activeBookedDoctors = array_column(
     $bookingModel->myActiveBookings($patient['id']),
     'id'  // this is the doctor ID, because SELECT d.* returns d.id
@@ -21,6 +95,9 @@ $activeBookedDoctors = array_column(
 
 
 
+ 
+ 
+ 
 ?>
 <!DOCTYPE html>
 <html>
@@ -30,6 +107,7 @@ $activeBookedDoctors = array_column(
 </head>
 <body>
 
+ 
 <nav>
     <div class="nav-left">Patient View</div>
     <div class="nav-right">
@@ -38,6 +116,8 @@ $activeBookedDoctors = array_column(
         <a href="./medicines.php">Medicines</a>
 
 
+ 
+ 
         <div class="dropdown">
             <span><?= htmlspecialchars($patient['name']) ?> ▼</span>
             <div class="dropdown-content">
@@ -54,6 +134,14 @@ $activeBookedDoctors = array_column(
         <input type="text" id="searchInput" placeholder="Search doctors by expertise or description...">
     </div>
 
+ 
+<div class="container">
+    <h2>Available Doctors</h2>
+ 
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search doctors by expertise or description...">
+    </div>
+ 
     <div class="cards" id="doctorCards">
         <?php foreach ($doctors as $d): ?>
         <div class="card" data-expertise="<?= htmlspecialchars(strtolower($d['degree'] . ' ' . $d['description'])) ?>">
@@ -66,6 +154,7 @@ $activeBookedDoctors = array_column(
             <p><strong>Available Time:</strong> <?= htmlspecialchars($d['available_time']) ?></p>
             <p><strong>Description:</strong> <?= htmlspecialchars($d['description'] ?? '') ?></p>
 
+ 
             <!-- Updated buttons using only active bookings -->
     <!-- Updated buttons -->
      <?php
@@ -76,6 +165,11 @@ $days = array_map('trim', explode(',', $d['available_days']));
     <?php foreach($days as $day): ?>
         <label>
             <input 
+ 
+<div class="days">
+    <?php foreach($days as $day): ?>
+        <label>
+            <input
                 type="radio"
                 name="day_<?= (int)$d['id'] ?>"
                 value="<?= htmlspecialchars($day) ?>"
@@ -85,12 +179,14 @@ $days = array_map('trim', explode(',', $d['available_days']));
     <?php endforeach; ?>
 </div>
 
+ 
 <button
     class="book"
     onclick="bookDoctor(<?= (int)$d['id'] ?>)"
     <?= !($d['is_available'] ?? 0) || in_array($d['id'], $activeBookedDoctors) ? 'disabled' : '' ?>
 >Book</button>
 
+ 
 <button
     class="unbook"
     onclick="unbookDoctorByDocId(<?= (int)$d['id'] ?>)"
@@ -100,6 +196,10 @@ $days = array_map('trim', explode(',', $d['available_days']));
 
 
 
+ 
+ 
+ 
+ 
         </div>
         <?php endforeach; ?>
     </div>
@@ -113,17 +213,20 @@ $days = array_map('trim', explode(',', $d['available_days']));
     </div>
 </footer>
 
+ 
 <script>
 function bookDoctor(doctorId){
     const selectedDay = document.querySelector(
         `input[name="day_${doctorId}"]:checked`
     );
 
+ 
     if(!selectedDay){
         alert("Please select a preferred day");
         return;
     }
 
+ 
     fetch("../public/book.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,6 +245,7 @@ function bookDoctor(doctorId){
     });
 }
 
+ 
 // New function for doctor ID based unbooking
 function unbookDoctorByDocId(doctorId){
     fetch("../public/unbook.php", {
@@ -157,6 +261,7 @@ function unbookDoctorByDocId(doctorId){
     });
 }
 
+ 
 // For booking ID based unbooking (used in my_bookings.php)
 function unbookDoctor(bookingId){
     fetch("../public/unbook.php", {
@@ -173,6 +278,8 @@ function unbookDoctor(bookingId){
 }
 
 
+ 
+ 
 // Search filter
 document.getElementById('searchInput').addEventListener('input', function(){
     let val = this.value.toLowerCase();
@@ -185,3 +292,7 @@ document.getElementById('searchInput').addEventListener('input', function(){
 
 </body>
 </html>
+ 
+</body>
+</html>
+ 

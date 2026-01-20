@@ -3,6 +3,7 @@
 <head>
   <title>Medicine List</title>
   
+ 
 <link rel="stylesheet" href="../public/assets/css/medicine.css">
 </head>
 <body>
@@ -12,7 +13,7 @@
         <a href="./patient.php">My Bookings</a>
         <a href="./my_bookings.php">Doctors</a>
         <a href="./medicines.php">Medicines</a>
-
+ 
        
                 <a href="../public/logout.php">Logout</a>
             </div>
@@ -28,6 +29,15 @@
 </div>
 
 
+ 
+<div class="container">
+  <h2>Search Medicines</h2>
+  <input type="text" id="searchInput" placeholder="Search medicine...">
+ 
+  <div class="cards" id="medicineCards"></div>
+</div>
+ 
+ 
 <script>
 fetch('../public/assets/data/medicines.json')
   .then(res => res.json())
@@ -36,6 +46,7 @@ fetch('../public/assets/data/medicines.json')
     displayMeds(data);
   });
 
+ 
 function displayMeds(list){
   let container = document.getElementById('medicineCards');
   container.innerHTML = "";
@@ -50,6 +61,7 @@ function displayMeds(list){
   });
 }
 
+ 
 document.getElementById('searchInput').addEventListener('input', function(){
   let val = this.value.toLowerCase();
   let filtered = window.meds.filter(m =>
@@ -61,5 +73,8 @@ document.getElementById('searchInput').addEventListener('input', function(){
 });
 </script>
 
+</body>
+</html>
+ 
 </body>
 </html>

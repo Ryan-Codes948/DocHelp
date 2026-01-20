@@ -1,5 +1,6 @@
 /* Simple Modern Patient Dashboard CSS */
 
+ 
 * {
     margin: 0;
     padding: 0;
@@ -7,11 +8,12 @@
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
+ 
 body {
     background: #f4f6f8;
     color: #1f2937;
 }
-
+ 
 /* NAVBAR */
 nav {
     display: flex;
@@ -34,6 +36,18 @@ nav {
     gap: 12px;
 }
 
+ 
+.nav-left {
+    font-weight: 600;
+    color: #2563eb;
+}
+ 
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+ 
 .nav-right a {
     color: #374151;
     margin-right: 15px;
@@ -46,6 +60,11 @@ nav {
     color: #2563eb;
 }
 
+ 
+.nav-right a:hover {
+    color: #2563eb;
+}
+ 
 /* Dropdown */
 .dropdown {
     position: relative;
@@ -53,6 +72,7 @@ nav {
     font-weight: 500;
 }
 
+ 
 .dropdown-content {
     display: none;
     position: absolute;
@@ -64,6 +84,7 @@ nav {
     z-index: 1;
 }
 
+ 
 .dropdown-content a {
     color: #374151;
     padding: 10px 14px;
@@ -80,18 +101,28 @@ nav {
     display: block;
 }
 
+ 
+.dropdown-content a:hover {
+    background: #f1f5f9;
+}
+ 
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+ 
 /* Main Container */
 .container {
     max-width: 1200px;
     margin: 26px auto;
     padding: 0 18px;
 }
-
+ 
 /* Search bar */
 .search-bar {
     margin-bottom: 22px;
 }
 
+ 
 .search-bar input {
     width: 100%;
     padding: 10px 12px;
@@ -101,11 +132,12 @@ nav {
     background: #ffffff;
 }
 
+ 
 .search-bar input:focus {
     outline: none;
     border-color: #2563eb;
 }
-
+ 
 /* Cards */
 .cards {
     display: flex;
@@ -113,7 +145,7 @@ nav {
     gap: 18px;
     justify-content: center;
 }
-
+ 
 .card {
     background: #ffffff;
     border-radius: 14px;
@@ -122,6 +154,7 @@ nav {
     box-shadow: 0 10px 24px rgba(0,0,0,0.08);
 }
 
+ 
 .card h3 {
     margin-top: 0;
     font-weight: 600;
@@ -129,11 +162,13 @@ nav {
     font-size: 16px;
 }
 
+ 
 .card p {
     font-size: 13px;
     color: #4b5563;
 }
 
+ 
 /* Status / Cancel Info Boxes */
 .cancelled-info {
     padding: 10px 12px;
@@ -143,16 +178,19 @@ nav {
     font-size: 13px;
 }
 
+ 
 .cancelled-info.doctor-cancelled {
     background: #fef3c7;
     color: #92400e;
 }
 
+ 
 .cancelled-info.patient-cancelled {
     background: #dcfce7;
     color: #166534;
 }
 
+ 
 /* Action Buttons */
 .remove-btn, .unbook-btn {
     padding: 8px 14px;
@@ -165,26 +203,31 @@ nav {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
+ 
 .remove-btn {
     background: #dc2626;
     color: #ffffff;
 }
 
+ 
 .remove-btn:hover {
     background: #b91c1c;
     transform: translateY(-1px);
 }
 
+ 
 .unbook-btn {
     background: #f59e0b;
     color: #ffffff;
 }
 
+ 
 .unbook-btn:hover {
     background: #d97706;
     transform: translateY(-1px);
 }
 
+ 
 /* Footer */
 .footer {
     background: #ffffff;
@@ -195,12 +238,21 @@ nav {
     box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
 }
 
+ 
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
 }
 
+/* Responsive */
+@media (max-width: 600px) {
+    .card {
+        width: 100%;
+    }
+}
+}
+ 
 /* Responsive */
 @media (max-width: 600px) {
     .card {
