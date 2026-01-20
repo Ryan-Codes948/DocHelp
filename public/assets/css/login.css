@@ -1,6 +1,8 @@
+/* Simple Modern Login CSS */
+
 body {
-    font-family: Arial, sans-serif;
-    background: #f4f4f9;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #f4f6f8, #e5e7eb);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -8,66 +10,87 @@ body {
     margin: 0;
 }
 
+/* Login Box */
 .login-container {
-    background: #fff;
-    padding: 30px 40px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    width: 350px;
+    background: #ffffff;
+    padding: 24px;
+    width: 320px;
     text-align: center;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
 }
 
+/* Heading */
 h2 {
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: 18px;
+    color: #111827;
+    font-weight: 600;
 }
 
+/* Labels */
 label {
     display: block;
     text-align: left;
-    margin-bottom: 5px;
-    font-weight: bold;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    color: #374151;
 }
 
-input[type="email"], input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
+/* Inputs */
+input[type="email"], 
+input[type="password"] {
+    width: 95%;
+    padding: 8px 10px;   /* reduced from 10px 12px */
+    margin-bottom: 12px; /* slightly tighter spacing */
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;     /* slightly smaller text */
 }
 
+
+input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* Button */
 button {
     width: 100%;
     padding: 10px;
-    background: #007BFF;
-    color: #fff;
+    background: #2563eb;
+    color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    font-weight: bold;
+    border-radius: 8px;
+    transition: background 0.2s ease, transform 0.1s ease;
 }
 
 button:hover {
-    background: #0056b3;
+    background: #1d4ed8;
+    transform: translateY(-1px);
 }
 
+/* Error */
 .error {
-    color: #dc3545;
-    margin-bottom: 15px;
-    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 12px;
+    font-size: 13px;
 }
 
+/* Links */
 .signup-link {
-    margin-top: 20px;
-    font-size: 14px;
+    margin-top: 18px;
+    font-size: 13px;
+    color: #6b7280;
 }
 
 .signup-link a {
-    color: #007BFF;
+    color: #2563eb;
     text-decoration: none;
+    font-weight: 500;
 }
 
 .signup-link a:hover {
