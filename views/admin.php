@@ -8,6 +8,12 @@ if(!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin'){
     exit;
 }
 
+// Get current admin info
+$admin_id = $_SESSION['user_id'];
+$stmt = $conn->prepare("SELECT email FROM users WHERE id = ?");
+$stmt->execute([$admin_id]);
+$admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
 // Initialize messages
 $errors = [];
 $success = '';
@@ -15,6 +21,147 @@ $medicineError = '';
 $medicineSuccess = '';
 $appointmentSuccess = '';
 $appointmentError = '';
+$profileSuccess = '';
+$profileError = '';
+$bookingSuccess = '';
+$bookingError = '';
+
+// Handle Admin Profile Update
+if(isset($_POST['update_admin_profile'])){
+    $new_email = trim($_POST['email']);
+    $new_password = trim($_POST['password']);
+    $confirm_password = trim($_POST['confirm_password']);
+    
+    $profileErrors = [];
+    
+    // Validate email
+    if(!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+        $profileErrors['email'] = "Valid email required!";
+    }
+    
+    // Check if email already exists (excluding current admin)
+    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+    $stmt->execute([$new_email, $admin_id]);
+    if($stmt->rowCount() > 0){
+        $profileErrors['email'] = "Email already in use by another account!";
+    }
+    
+    // Validate passwords if provided
+    if(!empty($new_password)) {
+        if(strlen($new_password) < 6) {
+            $profileErrors['password'] = "Password must be at least 6 characters!";
+        }
+        if($new_password !== $confirm_password) {
+            $profileErrors['confirm_password'] = "Passwords do not match!";
+        }
+    }
+    
+    if(empty($profileErrors)){
+        try {
+            if(!empty($new_password)) {
+                // Update with new password
+                $stmt = $conn->prepare("UPDATE users SET email = ?, password = ? WHERE id = ?");
+                $stmt->execute([$new_email, $new_password, $admin_id]);
+            } else {
+                // Update only email
+                $stmt = $conn->prepare("UPDATE users SET email = ? WHERE id = ?");
+                $stmt->execute([$new_email, $admin_id]);
+            }
+            
+            // Update session email
+            $_SESSION['email'] = $new_email;
+            
+            // Update local admin info
+            $admin['email'] = $new_email;
+            
+            $profileSuccess = "Profile updated successfully!";
+        } catch (Exception $e) {
+            $profileError = "Error updating profile: " . $e->getMessage();
+        }
+    } else {
+        $profileError = implode(" ", array_values($profileErrors));
+    }
+}
+
+// Handle Admin Booking Appointment
+if(isset($_POST['admin_book_appointment'])){
+    $patient_id = (int)($_POST['patient_id'] ?? 0);
+    $doctor_id = (int)($_POST['doctor_id'] ?? 0);
+    $preferred_day = trim($_POST['preferred_day'] ?? '');
+    
+    if($patient_id <= 0 || $doctor_id <= 0 || empty($preferred_day)){
+        $bookingError = "All fields are required!";
+    } else {
+        // Check if patient and doctor exist
+        $stmt = $conn->prepare("SELECT id FROM patients WHERE id = ?");
+        $stmt->execute([$patient_id]);
+        if($stmt->rowCount() === 0){
+            $bookingError = "Patient not found!";
+        }
+        
+        $stmt = $conn->prepare("SELECT id FROM doctors WHERE id = ?");
+        $stmt->execute([$doctor_id]);
+        if($stmt->rowCount() === 0){
+            $bookingError = "Doctor not found!";
+        }
+        
+        if(!in_array($preferred_day, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])){
+            $bookingError = "Invalid day selected!";
+        }
+        
+        if(empty($bookingError)){
+            // Check for existing booking
+            $stmt = $conn->prepare("SELECT id FROM bookings WHERE doctor_id = ? AND patient_id = ? AND status = 'booked'");
+            $stmt->execute([$doctor_id, $patient_id]);
+            
+            if($stmt->rowCount() > 0){
+                $bookingError = "Patient already has an active booking with this doctor!";
+            } else {
+                // Check for cancelled booking to reuse
+                $stmt = $conn->prepare("SELECT id FROM bookings WHERE doctor_id = ? AND patient_id = ? AND status = 'cancelled'");
+                $stmt->execute([$doctor_id, $patient_id]);
+                $cancelled = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                try {
+                    if($cancelled){
+                        // Update cancelled booking
+                        $stmt = $conn->prepare("UPDATE bookings SET status = 'booked', doctor_cancelled = 0, preferred_day = ?, patient_unbooked = 0, is_seen = 0 WHERE id = ?");
+                        $result = $stmt->execute([$preferred_day, $cancelled['id']]);
+                    } else {
+                        // Create new booking
+                        $stmt = $conn->prepare("INSERT INTO bookings (doctor_id, patient_id, preferred_day, status, doctor_cancelled, patient_unbooked, is_seen) VALUES (?, ?, ?, 'booked', 0, 0, 0)");
+                        $result = $stmt->execute([$doctor_id, $patient_id, $preferred_day]);
+                    }
+                    
+                    if($result) {
+                        $bookingSuccess = "Appointment booked successfully!";
+                        
+                        // Refresh appointments list
+                        $appointments = $conn->query("
+                            SELECT b.*, 
+                                   p.name as patient_name, 
+                                   p.phone as patient_phone,
+                                   d.name as doctor_name,
+                                   d.degree as doctor_degree
+                            FROM bookings b
+                            LEFT JOIN patients p ON b.patient_id = p.id
+                            LEFT JOIN doctors d ON b.doctor_id = d.id
+                            ORDER BY b.id DESC
+                        ")->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        $aCount = count($appointments);
+                    } else {
+                        $errorInfo = $stmt->errorInfo();
+                        $bookingError = "Database error: " . $errorInfo[2];
+                    }
+                    
+                } catch (Exception $e) {
+                    $bookingError = "Error booking appointment!";
+                }
+            }
+        }
+    }
+}
 
 // Medicine JSON file
 $medicineFile = __DIR__ . "/../public/assets/data/medicines.json";
@@ -300,13 +447,11 @@ $pCount = count($patients);
 $dCount = count($doctors);
 $aCount = count($appointments);
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="../public/assets/css/admin.css">
-    
 </head>
 <body>
     <!-- Navbar -->
@@ -315,10 +460,12 @@ $aCount = count($appointments);
             <a href="#dashboard" class="logo">DocMate Admin</a>
             <div class="nav-links">
                 <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="#admin-profile" class="nav-link">My Profile</a>
                 <a href="#view-users" class="nav-link">View Users</a>
                 <a href="#update-users" class="nav-link">Update Users</a>
                 <a href="#add-user" class="nav-link">Add User</a>
                 <a href="#appointment-manager" class="nav-link">Appointments</a>
+                <a href="#admin-book-appointment" class="nav-link">Book Appointment</a>
                 <a href="#medicine-manager" class="nav-link">Medicines</a>
                 <a href="../public/logout.php" class="nav-link" style="background: #dc3545;">Logout</a>
             </div>
@@ -329,11 +476,71 @@ $aCount = count($appointments);
         <!-- Dashboard Section -->
         <div id="dashboard" class="section">
             <div class="centered-content">
-                <h1>Admin Dashboard</h1>
+                <div class="welcome-message">
+                    <h1>Welcome, <?= htmlspecialchars($admin['email'] ?? 'Admin') ?>!</h1>
+                    <p>You are logged in as Administrator. Use the navigation above to manage the system.</p>
+                </div>
                 <div class="counts">
                     <div class="count-box">Total Patients: <?= $pCount ?></div>
                     <div class="count-box">Total Doctors: <?= $dCount ?></div>
                     <div class="count-box">Total Appointments: <?= $aCount ?></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Profile Section -->
+        <div id="admin-profile" class="section">
+            <div class="centered-content">
+                <div class="instructions">
+                    <strong>Instructions for Admin Profile Update:</strong>
+                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px;">
+                        <li>You can change your email address here</li>
+                        <li>Leave password fields empty if you don't want to change password</li>
+                        <li>If changing password, it must be at least 6 characters</li>
+                        <li>Passwords must match in both fields</li>
+                        <li>Email must be unique and valid</li>
+                    </ul>
+                </div>
+
+                <h2>My Profile</h2>
+
+                <?php if($profileSuccess): ?>
+                    <div class="success"><?= $profileSuccess ?></div>
+                <?php endif; ?>
+
+                <?php if($profileError): ?>
+                    <div class="error"><?= $profileError ?></div>
+                <?php endif; ?>
+
+                <div class="profile-form-container">
+                    <div class="update-form-card" style="max-width: 600px; margin: 0 auto;">
+                        <form method="POST">
+                            <div class="form-grid">
+                                <div style="grid-column: span 2;">
+                                    <h3 style="text-align: center; margin-bottom: 15px;">Current Email: <?= htmlspecialchars($admin['email'] ?? '') ?></h3>
+                                </div>
+                                
+                                <div style="grid-column: span 2;">
+                                    <label style="display: block; margin-bottom: 5px;">New Email Address:</label>
+                                    <input type="email" name="email" value="<?= htmlspecialchars($admin['email'] ?? '') ?>" placeholder="New Email" required>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px;">New Password (Optional):</label>
+                                    <input type="password" name="password" placeholder="Leave empty to keep current">
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px;">Confirm Password:</label>
+                                    <input type="password" name="confirm_password" placeholder="Confirm password">
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 20px;">
+                                <button type="submit" name="update_admin_profile">Update Profile</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -652,6 +859,81 @@ $aCount = count($appointments);
                 <?php if($appointmentError): ?>
                     <div class="error"><?= $appointmentError ?></div>
                 <?php endif; ?>
+                        <!-- Admin Book Appointment Section -->
+        <div id="admin-book-appointment" class="section">
+            <div class="centered-content">
+                <div class="instructions">
+                    <strong>Instructions for Admin Booking:</strong>
+                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px;">
+                        <li>Select a patient from the dropdown</li>
+                        <li>Select a doctor from the dropdown</li>
+                        <li>Choose the preferred day for the appointment</li>
+                        <li>Click "Book Appointment" to create the booking</li>
+                        <li>Note: Patient can only have one active booking per doctor</li>
+                    </ul>
+                </div>
+
+                <h2>Book Appointment on Behalf of Patient</h2>
+
+                <?php if(isset($bookingSuccess)): ?>
+                    <div class="success"><?= $bookingSuccess ?></div>
+                <?php endif; ?>
+
+                <?php if(isset($bookingError)): ?>
+                    <div class="error"><?= $bookingError ?></div>
+                <?php endif; ?>
+
+                <div class="booking-form-container">
+                    <div style="background: white; padding: 25px; border-radius: 5px; border: 1px solid #ddd; max-width: 600px; margin: 0 auto;">
+                        <form method="POST">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px;">Select Patient *</label>
+                                    <select name="patient_id" required style="width: 100%;">
+                                        <option value="">-- Choose Patient --</option>
+                                        <?php foreach($patients as $p): ?>
+                                        <option value="<?= $p['id'] ?>">
+                                            <?= htmlspecialchars($p['name']) ?> (ID: <?= $p['id'] ?>)
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px;">Select Doctor *</label>
+                                    <select name="doctor_id" required style="width: 100%;">
+                                        <option value="">-- Choose Doctor --</option>
+                                        <?php foreach($doctors as $d): ?>
+                                        <option value="<?= $d['id'] ?>">
+                                            <?= htmlspecialchars($d['name']) ?> (<?= htmlspecialchars($d['degree']) ?>)
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 5px;">Preferred Day *</label>
+                                <select name="preferred_day" required style="width: 100%;">
+                                    <option value="">-- Select Day --</option>
+                                    <option value="Mon">Monday</option>
+                                    <option value="Tue">Tuesday</option>
+                                    <option value="Wed">Wednesday</option>
+                                    <option value="Thu">Thursday</option>
+                                    <option value="Fri">Friday</option>
+                                    <option value="Sat">Saturday</option>
+                                    <option value="Sun">Sunday</option>
+                                </select>
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <button type="submit" name="admin_book_appointment">Book Appointment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
                 <!-- Appointment Edit Form -->
                 <div class="appointment-form-container">
@@ -753,7 +1035,7 @@ $aCount = count($appointments);
             </div>
         </div>
 
-        <!-- Medicine Manager Section -->
+               <!-- Medicine Manager Section -->
         <div id="medicine-manager" class="section">
             <div class="centered-content">
                 <div class="instructions">
@@ -765,6 +1047,7 @@ $aCount = count($appointments);
                         <li>Click Remove to delete a medicine (with confirmation)</li>
                         <li>Click Save All Medicines to save all changes</li>
                         <li>Current medicine count: <strong><?= count($medicines) ?></strong></li>
+                        <li>Showing <span id="showingCount"><?= min(10, count($medicines)) ?></span> of <?= count($medicines) ?> medicines</li>
                     </ul>
                 </div>
 
@@ -805,66 +1088,31 @@ $aCount = count($appointments);
                                     </tr>
                                 </thead>
                                 <tbody id="medicineTableBody">
-                                    <?php foreach($medicines as $index => $medicine): ?>
-                                    <tr class="medicine-row">
-                                        <td><?= $index + 1 ?></td>
-                                        <td>
-                                            <input type="text" 
-                                                   name="medicine[<?= $index ?>][name]" 
-                                                   value="<?= htmlspecialchars($medicine['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                                   placeholder="Medicine name"
-                                                   required>
-                                        </td>
-                                        <td>
-                                            <input type="text" 
-                                                   name="medicine[<?= $index ?>][type]" 
-                                                   value="<?= htmlspecialchars($medicine['type'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                                   placeholder="Type"
-                                                   required>
-                                        </td>
-                                        <td>
-                                            <input type="text" 
-                                                   name="medicine[<?= $index ?>][for]" 
-                                                   value="<?= htmlspecialchars($medicine['for'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                                   placeholder="Used for">
-                                        </td>
-                                        <td>
-                                            <input type="text" 
-                                                   name="medicine[<?= $index ?>][brand]" 
-                                                   value="<?= htmlspecialchars($medicine['brand'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                                   placeholder="Brand">
-                                        </td>
-                                        <td>
-                                            <button type="button" onclick="removeMedicineRow(this)" class="btn-danger action-btn">
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                    <?php if(empty($medicines)): ?>
-                                    <tr class="medicine-row">
-                                        <td>1</td>
-                                        <td>
-                                            <input type="text" name="medicine[0][name]" placeholder="Medicine name" required>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="medicine[0][type]" placeholder="Type" required>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="medicine[0][for]" placeholder="Used for">
-                                        </td>
-                                        <td>
-                                            <input type="text" name="medicine[0][brand]" placeholder="Brand">
-                                        </td>
-                                        <td>
-                                            <button type="button" onclick="removeMedicineRow(this)" class="btn-danger action-btn">
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endif; ?>
+                                    <?php 
+                                    $totalMedicines = count($medicines);
+                                    $initialShow = min(10, $totalMedicines);
+                                    
+                                    // JSON encode all medicines for JavaScript
+                                    $medicinesJson = json_encode($medicines);
+                                    ?>
+                                    
+                                    <!-- Medicines will be loaded here by JavaScript -->
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <!-- Load More Button Container -->
+                        <div id="loadMoreContainer" style="text-align: center; margin-top: 20px;">
+                            <?php if($totalMedicines > 10): ?>
+                            <button type="button" id="loadMoreBtn" class="btn-success" 
+                                    style="padding: 8px 20px; font-weight: bold;">
+                                Load All Medicines (<?= $totalMedicines - $initialShow ?> more)
+                            </button>
+                            <button type="button" id="showLessBtn" class="btn-warning" 
+                                    style="padding: 8px 20px; font-weight: bold; display: none;">
+                                Show Only First 10 Medicines
+                            </button>
+                            <?php endif; ?>
                         </div>
                         
                         <div style="text-align: center; margin-top: 30px;">
@@ -874,101 +1122,242 @@ $aCount = count($appointments);
                 </div>
             </div>
         </div>
-
-    </div>
-
     <!-- Footer -->
     <footer class="footer">
-        <p>All Right Reserved © DocHelp <?= date('Y') ?></p>
+        <p>All Right Reserved © DocMate <?= date('Y') ?></p>
     </footer>
 
 <script>
-// Medicine table functionality
-let medicineRowCount = <?= count($medicines) ?>;
-let medicineTableBody = document.getElementById('medicineTableBody');
+// ========== MEDICINE MANAGER WITH AJAX LOAD MORE ==========
+let allMedicines = <?= json_encode($medicines) ?>;
+let showingAll = <?= isset($_GET['show_all_medicines']) ? 'true' : 'false' ?>;
+const INITIAL_SHOW = 10;
+const medicineTableBody = document.getElementById('medicineTableBody');
+const loadMoreBtn = document.getElementById('loadMoreBtn');
+const showLessBtn = document.getElementById('showLessBtn');
+const showingCountSpan = document.getElementById('showingCount');
 
-// Search functionality
-const medicineSearch = document.getElementById('medicineSearch');
-medicineSearch.addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase().trim();
-    const rows = document.querySelectorAll('.medicine-row');
+// Initialize medicine manager
+function initializeMedicineManager() {
+    // Render initial medicines
+    renderMedicines();
     
-    rows.forEach(row => {
-        const nameInput = row.querySelector('input[name*="[name]"]');
-        const medicineName = nameInput ? nameInput.value.toLowerCase() : '';
-        
-        if (searchTerm === '' || medicineName.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+    // Set up button event listeners
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadAllMedicines);
+    }
+    
+    if (showLessBtn) {
+        showLessBtn.addEventListener('click', showLessMedicines);
+    }
+    
+    // Update showing count
+    updateShowingCount();
+}
+
+// Render medicines to table
+function renderMedicines() {
+    medicineTableBody.innerHTML = '';
+    const limit = showingAll ? allMedicines.length : Math.min(INITIAL_SHOW, allMedicines.length);
+    
+    // Slice medicines based on current view
+    const medicinesToShow = allMedicines.slice(0, limit);
+    
+    medicinesToShow.forEach((medicine, index) => {
+        const newRow = document.createElement('tr');
+        newRow.className = 'medicine-row';
+        newRow.innerHTML = `
+            <td>${index + 1}</td>
+            <td>
+                <input type="text" 
+                       name="medicine[${index}][name]" 
+                       value="${escapeHtml(medicine.name || '')}"
+                       placeholder="Medicine name"
+                       required>
+            </td>
+            <td>
+                <input type="text" 
+                       name="medicine[${index}][type]" 
+                       value="${escapeHtml(medicine.type || '')}"
+                       placeholder="Type"
+                       required>
+            </td>
+            <td>
+                <input type="text" 
+                       name="medicine[${index}][for]" 
+                       value="${escapeHtml(medicine.for || '')}"
+                       placeholder="Used for">
+            </td>
+            <td>
+                <input type="text" 
+                       name="medicine[${index}][brand]" 
+                       value="${escapeHtml(medicine.brand || '')}"
+                       placeholder="Brand">
+            </td>
+            <td>
+                <button type="button" onclick="removeMedicineRow(this, ${index})" class="btn-danger action-btn">
+                    Remove
+                </button>
+            </td>
+        `;
+        medicineTableBody.appendChild(newRow);
     });
-});
-
-function addMedicineRow() {
-    const newIndex = medicineRowCount;
     
+    // Add empty row for new medicine if needed
+    if (allMedicines.length === 0) {
+        addEmptyMedicineRow(0);
+    }
+    
+    // Update button visibility
+    updateButtonVisibility();
+}
+
+// Add new medicine row
+function addMedicineRow() {
+    const newIndex = allMedicines.length;
+    
+    // Add to array
+    allMedicines.push({
+        name: '',
+        type: '',
+        for: '',
+        brand: ''
+    });
+    
+    // If we're showing limited view and just exceeded it, show load more button
+    if (!showingAll && allMedicines.length > INITIAL_SHOW && loadMoreBtn) {
+        loadMoreBtn.style.display = 'inline-block';
+    }
+    
+    // Re-render with new count
+    renderMedicines();
+    updateShowingCount();
+}
+
+// Add empty row for new medicine
+function addEmptyMedicineRow(index) {
     const newRow = document.createElement('tr');
     newRow.className = 'medicine-row';
     newRow.innerHTML = `
-        <td>${newIndex + 1}</td>
+        <td>${index + 1}</td>
         <td>
             <input type="text" 
-                   name="medicine[${newIndex}][name]" 
+                   name="medicine[${index}][name]" 
                    placeholder="Medicine name"
                    required>
         </td>
         <td>
             <input type="text" 
-                   name="medicine[${newIndex}][type]" 
+                   name="medicine[${index}][type]" 
                    placeholder="Type"
                    required>
         </td>
         <td>
             <input type="text" 
-                   name="medicine[${newIndex}][for]" 
+                   name="medicine[${index}][for]" 
                    placeholder="Used for">
         </td>
         <td>
             <input type="text" 
-                   name="medicine[${newIndex}][brand]" 
+                   name="medicine[${index}][brand]" 
                    placeholder="Brand">
         </td>
         <td>
-            <button type="button" onclick="removeMedicineRow(this)" class="btn-danger action-btn">
+            <button type="button" onclick="removeMedicineRow(this, ${index})" class="btn-danger action-btn">
                 Remove
             </button>
         </td>
     `;
-    
     medicineTableBody.appendChild(newRow);
-    medicineRowCount++;
-    updateRowNumbers();
 }
 
-function removeMedicineRow(button) {
-    const row = button.closest('tr');
-    if (confirm('Are you sure you want to remove this medicine?')) {
-        row.remove();
-        updateRowNumbers();
+// Remove medicine row
+function removeMedicineRow(button, index) {
+    if (!confirm('Are you sure you want to remove this medicine?')) {
+        return;
+    }
+    
+    // Remove from array
+    allMedicines.splice(index, 1);
+    
+    // Re-render
+    renderMedicines();
+    updateShowingCount();
+}
+
+// Load all medicines (AJAX-style - no page reload)
+function loadAllMedicines() {
+    showingAll = true;
+    renderMedicines();
+    updateShowingCount();
+}
+
+// Show only first 10 medicines
+function showLessMedicines() {
+    showingAll = false;
+    renderMedicines();
+    updateShowingCount();
+}
+
+// Update showing count display
+function updateShowingCount() {
+    const showingCount = showingAll ? allMedicines.length : Math.min(INITIAL_SHOW, allMedicines.length);
+    showingCountSpan.textContent = showingCount;
+}
+
+// Update button visibility
+function updateButtonVisibility() {
+    if (!loadMoreBtn || !showLessBtn) return;
+    
+    if (allMedicines.length > INITIAL_SHOW) {
+        if (showingAll) {
+            loadMoreBtn.style.display = 'none';
+            showLessBtn.style.display = 'inline-block';
+        } else {
+            loadMoreBtn.style.display = 'inline-block';
+            showLessBtn.style.display = 'none';
+            loadMoreBtn.textContent = `Load All Medicines (${allMedicines.length - INITIAL_SHOW} more)`;
+        }
+    } else {
+        loadMoreBtn.style.display = 'none';
+        showLessBtn.style.display = 'none';
     }
 }
 
-function updateRowNumbers() {
-    const rows = document.querySelectorAll('#medicineTableBody tr');
-    rows.forEach((row, index) => {
-        row.cells[0].textContent = index + 1;
-        const inputs = row.querySelectorAll('input');
-        if (inputs.length >= 4) {
-            inputs[0].name = `medicine[${index}][name]`;
-            inputs[1].name = `medicine[${index}][type]`;
-            inputs[2].name = `medicine[${index}][for]`;
-            inputs[3].name = `medicine[${index}][brand]`;
-        }
+// HTML escape function
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Search functionality
+const medicineSearch = document.getElementById('medicineSearch');
+if (medicineSearch) {
+    medicineSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.medicine-row');
+        
+        rows.forEach(row => {
+            const nameInput = row.querySelector('input[name*="[name]"]');
+            const medicineName = nameInput ? nameInput.value.toLowerCase() : '';
+            
+            if (searchTerm === '' || medicineName.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     });
 }
 
-// Appointment functions
+// ========== APPOINTMENT FUNCTIONS ==========
 function loadAppointmentForEdit(id, status, day) {
     document.getElementById('editAppointmentId').value = id;
     document.getElementById('editStatus').value = status;
@@ -981,7 +1370,7 @@ function loadAppointmentForEdit(id, status, day) {
     });
 }
 
-// Other existing JavaScript functions
+// ========== VIEW USERS TOGGLE FUNCTIONS ==========
 const patientsSection = document.getElementById('patientsSection');
 const doctorsSection = document.getElementById('doctorsSection');
 const showPatientsBtn = document.getElementById('showPatients');
@@ -999,54 +1388,66 @@ const addPatient = document.getElementById('addPatient');
 const addDoctor = document.getElementById('addDoctor');
 
 // Toggle for View Users
-showPatientUsersBtn.addEventListener('click', () => {
-    patientUsers.style.display = 'block';
-    doctorUsers.style.display = 'none';
-});
-showDoctorUsersBtn.addEventListener('click', () => {
-    doctorUsers.style.display = 'block';
-    patientUsers.style.display = 'none';
-});
+if (showPatientUsersBtn && showDoctorUsersBtn) {
+    showPatientUsersBtn.addEventListener('click', () => {
+        patientUsers.style.display = 'block';
+        doctorUsers.style.display = 'none';
+    });
+    
+    showDoctorUsersBtn.addEventListener('click', () => {
+        doctorUsers.style.display = 'block';
+        patientUsers.style.display = 'none';
+    });
+}
 
 // Toggle for Add User forms
-addAdminBtn.addEventListener('click', () => {
-    addAdmin.style.display = 'block';
-    addPatient.style.display = 'none';
-    addDoctor.style.display = 'none';
-});
-addPatientBtn.addEventListener('click', () => {
-    addAdmin.style.display = 'none';
-    addPatient.style.display = 'block';
-    addDoctor.style.display = 'none';
-});
-addDoctorBtn.addEventListener('click', () => {
-    addAdmin.style.display = 'none';
-    addPatient.style.display = 'none';
-    addDoctor.style.display = 'block';
-});
+if (addAdminBtn && addPatientBtn && addDoctorBtn) {
+    addAdminBtn.addEventListener('click', () => {
+        addAdmin.style.display = 'block';
+        addPatient.style.display = 'none';
+        addDoctor.style.display = 'none';
+    });
+    
+    addPatientBtn.addEventListener('click', () => {
+        addAdmin.style.display = 'none';
+        addPatient.style.display = 'block';
+        addDoctor.style.display = 'none';
+    });
+    
+    addDoctorBtn.addEventListener('click', () => {
+        addAdmin.style.display = 'none';
+        addPatient.style.display = 'none';
+        addDoctor.style.display = 'block';
+    });
+}
 
 // Toggle sections for View Users
-showPatientsBtn.addEventListener('click', () => {
-    patientsSection.style.display = 'block';
-    doctorsSection.style.display = 'none';
-    searchInput.value = '';
-    filterCards();
-});
+if (showPatientsBtn && showDoctorsBtn) {
+    showPatientsBtn.addEventListener('click', () => {
+        patientsSection.style.display = 'block';
+        doctorsSection.style.display = 'none';
+        if (searchInput) searchInput.value = '';
+        filterCards();
+    });
+    
+    showDoctorsBtn.addEventListener('click', () => {
+        doctorsSection.style.display = 'block';
+        patientsSection.style.display = 'none';
+        if (searchInput) searchInput.value = '';
+        filterCards();
+    });
+}
 
-showDoctorsBtn.addEventListener('click', () => {
-    doctorsSection.style.display = 'block';
-    patientsSection.style.display = 'none';
-    searchInput.value = '';
-    filterCards();
-});
-
-// Search function
-searchInput.addEventListener('input', filterCards);
+// Search function for user cards
+if (searchInput) {
+    searchInput.addEventListener('input', filterCards);
+}
 
 function filterCards() {
     const val = searchInput.value.toLowerCase();
     const activeSection = patientsSection.style.display !== 'none' ? patientsSection : doctorsSection;
     const cards = activeSection.querySelectorAll('.user-card');
+    
     cards.forEach(card => {
         const nameElement = card.querySelector('h3');
         if (nameElement) {
@@ -1055,7 +1456,7 @@ function filterCards() {
     });
 }
 
-// Smooth scrolling for navbar links
+// ========== SMOOTH SCROLLING ==========
 document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', function(e) {
         if(this.getAttribute('href').startsWith('#')) {
@@ -1070,6 +1471,14 @@ document.querySelectorAll('.nav-link').forEach(link => {
             }
         }
     });
+});
+
+// ========== INITIALIZE ON PAGE LOAD ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize medicine manager
+    initializeMedicineManager();
+    
+    // Initialize any other components here
 });
 </script>
 </body>
