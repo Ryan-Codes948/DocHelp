@@ -1,0 +1,198 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+ 
+body {
+    background: #f4f6f8;
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 20px;
+    color: #1f2937;
+}
+ 
+/* Signup Container */
+.signup-container {
+    background: #ffffff;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.12);
+}
+ 
+/* Heading */
+h2 {
+    color: #111827;
+    text-align: center;
+    margin-bottom: 26px;
+    font-weight: 600;
+}
+ 
+/* Messages */
+.error-message {
+    color: #991b1b;
+    background: #fee2e2;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+ 
+.success-message {
+    color: #166534;
+    background: #dcfce7;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+ 
+.field-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+ 
+/* Form Groups */
+.form-group {
+    margin-bottom: 16px;
+}
+ 
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+}
+ 
+/* Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    background: #ffffff;
+}
+ 
+input.error-field, textarea.error-field {
+    border-color: #dc2626;
+}
+ 
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+ 
+/* Checkbox Sections */
+.checkbox-section {
+    margin: 18px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+ 
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+ 
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+    cursor: pointer;
+    font-size: 13px;
+    color: #374151;
+}
+ 
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+ 
+/* Condition Categories */
+.condition-category {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+ 
+.condition-category h4 {
+    margin: 0 0 8px 0;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+}
+ 
+/* Buttons */
+button {
+    width: 100%;
+    padding: 12px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    margin-top: 14px;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+ 
+button:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+}
+ 
+/* Back Link */
+.back-link {
+    text-align: center;
+    margin-top: 18px;
+}
+ 
+.back-link a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+ 
+.back-link a:hover {
+    text-decoration: underline;
+}
+ 
+/* Required Field Indicator */
+.required::after {
+    content: " *";
+    color: #dc2626;
+}
+ 
+/* Form Rows */
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+ 
+.form-row .form-group {
+    flex: 1;
+}
+ 
+/* Other Conditions Textarea */
+.other-conditions {
+    margin-top: 16px;
+}
+ 
+.other-conditions textarea {
+    min-height: 70px;
+    resize: vertical;
+}
