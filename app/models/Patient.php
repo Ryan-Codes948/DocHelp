@@ -10,12 +10,14 @@ class Patient {
             VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
 
+        $health_issues = isset($d['health_issues']) ? implode(',', $d['health_issues']) : '';
+
         return $q->execute([
             $uid,
             $d['name'] ?? '',
             $d['phone'] ?? '',
             $d['address'] ?? '',
-            isset($d['issues']) ? implode(',', $d['issues']) : '',
+            $health_issues,  
             $d['emergency'] ?? '',
             $d['nid'] ?? ''
         ]);
@@ -25,3 +27,4 @@ class Patient {
         return $this->conn->query("SELECT * FROM patients")->fetchAll(PDO::FETCH_ASSOC);
     }
 }
+?>

@@ -1,38 +1,42 @@
 <?php
 require "../app/config/database.php";
 require "../app/core/auth.php";
-require "../app/models/Doctor.php";
 require "../app/models/Booking.php";
 
-// Get patient info
-$q = $conn->prepare("SELECT id, name, phone FROM patients WHERE user_id=?");
+$q = $conn->prepare("SELECT id, name FROM patients WHERE user_id=?");
 $q->execute([$_SESSION['user_id']]);
 $patient = $q->fetch(PDO::FETCH_ASSOC);
 
-$doctorModel  = new Doctor($conn);
 $bookingModel = new Booking($conn);
 
-$doctors = $doctorModel->all();
-$bookedDoctors = array_column($bookingModel->myBookings($patient['id']), 'id');
+// Get all bookings including cancelled ones with cancellation info
+$allBookings = $bookingModel->myAllBookingsWithCancelInfo($patient['id']);
+
+// Get only active bookings for button logic
+$activeBookings = array_column(
+    array_filter($allBookings, fn($b) => $b['status'] === 'booked'),
+    'booking_id'
+);
+
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Patient Dashboard</title>
+    <title>My Bookings</title>
     <link rel="stylesheet" href="../public/assets/css/patient_dashboard.css">
+    
 </head>
 <body>
-
 <nav>
     <div class="nav-left">Patient View</div>
     <div class="nav-right">
-        <a href="./patient_dashboard.php">Doctors</a>
-        <a href="./my_bookings.php">My Bookings</a>
-                <a href="./medicines.php">Medicines</a>
-
+        <a href="./patient.php">My Bookings</a>
+        <a href="./my_bookings.php">Doctors</a>
+        <a href="./medicines.php">Medicines</a>
 
         <div class="dropdown">
-            <span><?= htmlspecialchars($patient['name']) ?> ▼</span>
+            <?= htmlspecialchars($patient['name']) ?>
             <div class="dropdown-content">
                 <a href="../public/logout.php">Logout</a>
             </div>
@@ -41,65 +45,145 @@ $bookedDoctors = array_column($bookingModel->myBookings($patient['id']), 'id');
 </nav>
 
 <div class="container">
-    <h2>Available Doctors</h2>
+<h2>My Booked Doctors</h2>
 
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search doctors by expertise or description...">
+<?php if(empty($allBookings)): ?>
+    <p>You have no booked doctors yet.</p>
+<?php else: ?>
+    <div class="cards">
+       <?php foreach($allBookings as $d): 
+            $isCancelled = ($d['status'] === 'cancelled');
+            $doctorCancelled = ($d['doctor_cancelled'] ?? 0) == 1;
+            $patientUnbooked = ($d['patient_unbooked'] ?? 0) == 1;
+       ?>
+    <div class="card" id="booking-card-<?= $d['booking_id'] ?>">
+        <h3><?= htmlspecialchars($d['name']) ?></h3>
+        <p><strong>Phone:</strong> <?= htmlspecialchars($d['phone']) ?></p>
+        <p><strong>Degree:</strong> <?= htmlspecialchars($d['degree']) ?></p>
+        <p><strong>BMDC:</strong> <?= htmlspecialchars($d['bmdc'] ?? 'N/A') ?></p>
+        <p><strong>Chamber:</strong> <?= htmlspecialchars($d['chamber'] ?? 'N/A') ?></p>
+        <p><strong>Available Days:</strong> <?= htmlspecialchars($d['available_days']) ?></p>
+        <p><strong>Available Time:</strong> <?= htmlspecialchars($d['available_time']) ?></p>
+        <p><strong>Preferred Day:</strong> <?= htmlspecialchars($d['preferred_day'] ?? 'N/A') ?></p>
+        <p><strong>Description:</strong> <?= htmlspecialchars($d['description'] ?? '') ?></p>
+        <p><strong>Status:</strong> 
+            <span style="color: <?= $d['status'] === 'booked' ? 'green' : ($d['status'] === 'cancelled' ? 'red' : 'orange') ?>;">
+                <?= ucfirst($d['status']) ?>
+            </span>
+        </p>
+
+       <?php if($isCancelled): ?>
+            <div class="cancelled-info <?= $doctorCancelled ? 'doctor-cancelled' : ($patientUnbooked ? 'patient-cancelled' : '') ?>">
+                <?php if($doctorCancelled): ?>
+                    <strong>⚠️ Cancelled by Doctor</strong>
+                    <p>This appointment was cancelled by the doctor.</p>
+                <?php elseif($patientUnbooked): ?>
+                    <strong>ℹ️ Cancelled by You</strong>
+                    <p>You cancelled this appointment.</p>
+                <?php else: ?>
+                    <strong>⚠️ Appointment Cancelled</strong>
+                    <p>This appointment has been cancelled.</p>
+                <?php endif; ?>
+            </div>
+            
+            <button type="button" onclick="removeBookingCard(<?= $d['booking_id'] ?>)" class="remove-btn">
+                Remove from View
+            </button>
+        <?php elseif($d['status'] === 'booked'): ?>
+            <button type="button" onclick="unbookDoctor(<?= $d['booking_id'] ?>)" class="unbook-btn">
+                Cancel Appointment
+            </button>
+        <?php endif; ?>
     </div>
-
-    <div class="cards" id="doctorCards">
-        <?php foreach ($doctors as $d): ?>
-        <div class="card" data-expertise="<?= htmlspecialchars(strtolower($d['degree'] . ' ' . $d['description'])) ?>">
-            <h3><?= htmlspecialchars($d['name']) ?></h3>
-            <p><strong>Phone:</strong> <?= htmlspecialchars($d['phone']) ?></p>
-            <p><strong>Degree/Expertise:</strong> <?= htmlspecialchars($d['degree']) ?></p>
-            <p><strong>BMDC:</strong> <?= htmlspecialchars($d['bmdc'] ?? 'N/A') ?></p>
-            <p><strong>Chamber:</strong> <?= htmlspecialchars($d['chamber'] ?? 'N/A') ?></p>
-            <p><strong>Available Days:</strong> <?= htmlspecialchars($d['available_days']) ?></p>
-            <p><strong>Description:</strong> <?= htmlspecialchars($d['description'] ?? '') ?></p>
-
-            <button
-                class="book"
-                onclick="bookDoctor(<?= (int)$d['id'] ?>)"
-                <?= in_array($d['id'], $bookedDoctors) ? 'disabled' : '' ?>
-            >Book</button>
-
-            <button
-                class="unbook"
-                onclick="unbookDoctor(<?= (int)$d['id'] ?>)"
-                <?= in_array($d['id'], $bookedDoctors) ? '' : 'disabled' ?>
-            >Unbook</button>
-        </div>
-        <?php endforeach; ?>
+<?php endforeach; ?>
     </div>
+<?php endif; ?>
 </div>
+<footer class="footer">
+    <div class="footer-content">
+        <p>© <?= date('Y') ?> DocHelp👨‍⚕️</p>
+        <p><?= htmlspecialchars($patient['name']) ?> | Member Since: <?= date('F Y') ?></p>
+        <p style="font-size: 12px; margin-top: 10px; color: #bdc3c7;">
+        </p>
+    </div>
+</footer>
 
 <script>
-function bookDoctor(id){
-    fetch("../public/book.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor: id })
-    }).then(r => r.json()).then(() => location.reload());
-}
-
-function unbookDoctor(id){
+function unbookDoctor(bookingId){
+    if(!confirm("Are you sure you want to cancel this appointment?")) {
+        return;
+    }
+    
     fetch("../public/unbook.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor: id })
-    }).then(() => location.reload());
+        body: JSON.stringify({ booking_id: bookingId })
+    }).then(r => r.json()).then(res => {
+        if(res.success){
+            alert("Appointment cancelled successfully!");
+            location.reload();
+        } else {
+            alert("Failed to cancel appointment: " + (res.message ?? "Unknown error"));
+        }
+    });
 }
 
-// Search filter
-document.getElementById('searchInput').addEventListener('input', function(){
-    let val = this.value.toLowerCase();
-    document.querySelectorAll('.card').forEach(card => {
-        let expertise = card.dataset.expertise;
-        card.style.display = expertise.includes(val) ? '' : 'none';
+function removeBookingCard(bookingId) {
+    if(!confirm("Are you sure you want to permanently delete this cancelled appointment? This action cannot be undone.")) {
+        return;
+    }
+    
+    // Hide the card immediately
+    const card = document.getElementById('booking-card-' + bookingId);
+    if(card) {
+        card.style.display = 'none';
+    }
+    
+    // Permanently delete from database
+    fetch("../public/remove_booking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId })
+    }).then(r => r.json()).then(res => {
+        if(res.success){
+            // Optionally show a success message
+            console.log("Booking deleted successfully");
+            // If you want to remove the card completely from DOM:
+            if(card) {
+                card.remove();
+            }
+        } else {
+            // Show error and restore the card
+            alert("Failed to delete booking: " + (res.message ?? "Unknown error"));
+            if(card) {
+                card.style.display = 'block';
+            }
+        }
     });
-});
-</script>
+}
 
+function removeBookingCard(bookingId) {
+    if(!confirm("Are you sure you want to remove this cancelled appointment from your view?")) {
+        return;
+    }
+    
+    // Hide the card immediately
+    const card = document.getElementById('booking-card-' + bookingId);
+    if(card) {
+        card.style.display = 'none';
+    }
+    
+    // Optional: Send request to mark as hidden in database
+    fetch("../public/remove_booking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId })
+    }).then(r => r.json()).then(res => {
+        if(!res.success) {
+            console.error("Failed to update database:", res.message);
+        }
+    });
+}
+</script>
 </body>
 </html>
